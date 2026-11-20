@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>STS Achats</title><meta name="theme-color" content="#7b2ff7">
+<style>
+:root{--v:#7b2ff7;--o:#ff8a00;--p:#ec2f8a;--bg:#faf7ff;--tx:#241a35;--mu:#7d7490;--g:linear-gradient(135deg,#7b2ff7,#ff8a00)}
+*{box-sizing:border-box;margin:0}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:76px}
+button,input,select{font:inherit}
+.auth{max-width:420px;margin:0 auto;padding:28px 20px;text-align:center}.auth img{width:116px;border-radius:26px;box-shadow:0 8px 24px #7b2ff755}
+.auth h1{font-size:1.4rem;margin:14px 0 2px}.auth p.s{color:var(--mu);margin-bottom:16px}
+.lang{display:flex;gap:8px;justify-content:center;margin:12px 0}.lang button,.chip{border:1.5px solid #d8cdf0;background:#fff;border-radius:99px;padding:7px 14px;cursor:pointer}
+.lang button.on,.chip.on{background:var(--g);color:#fff;border-color:transparent}
+.card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 12px #7b2ff71a;text-align:left;margin-bottom:12px}
+label{display:block;font-size:.82rem;font-weight:600;margin:10px 0 4px}
+input,select{width:100%;padding:12px;border:1.5px solid #e2d9f3;border-radius:12px;background:#fff}
+.btn{width:100%;border:0;border-radius:99px;padding:13px;margin-top:14px;background:var(--g);color:#fff;font-weight:700;cursor:pointer}
+.btn.alt{background:#fff;color:var(--v);border:1.5px solid var(--v)}.lnk{background:none;border:0;color:var(--v);font-weight:600;margin-top:12px;cursor:pointer}
+.err{color:#d12a4a;font-size:.85rem;margin-top:8px}
+header{position:sticky;top:0;z-index:5;background:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px;box-shadow:0 2px 10px #0001}
+header img{width:36px;border-radius:9px}header b{flex:1;background:var(--g);-webkit-background-clip:text;color:transparent}
+header .lang{margin:0}header .lang button{padding:4px 10px;font-size:.8rem}
+main{padding:12px;max-width:900px;margin:0 auto}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:10px 0}.chip{white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+.pr{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px #7b2ff71a}
+.pr .im{aspect-ratio:1;display:grid;place-items:center;font-size:3.4rem;background:#f3ecff}.pr img{width:100%;height:100%;object-fit:cover}
+.pr div.t{padding:8px 10px;font-size:.85rem}.pr .pc{color:var(--p);font-weight:800}.pr button{margin:0 10px 10px;width:calc(100% - 20px);border:0;border-radius:99px;padding:8px;background:var(--g);color:#fff;font-weight:600}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px #0002}
+nav button{background:none;border:0;color:var(--mu);font-size:.72rem;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;position:relative}
+nav button span{font-size:1.3rem}nav button.on{color:var(--v);font-weight:700}nav i{position:absolute;top:-4px;right:2px;background:var(--p);color:#fff;border-radius:99px;font-size:.65rem;padding:0 5px;font-style:normal}
+.row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #eee;font-size:.88rem}.row small{color:var(--mu)}
+.st{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}.st div{background:var(--g);color:#fff;border-radius:14px;padding:14px;font-size:.85rem}.st b{display:block;font-size:1.6rem}
+.tag{background:#f3ecff;color:var(--v);border-radius:99px;padding:1px 8px;font-size:.72rem}
+.rules{list-style:none;padding:0;margin:10px 0 0;font-size:.86rem}.rules li{padding:2px 0;font-weight:600}.rules .bad{color:#d12a4a}.rules .ok{color:#16a34a}.rules .idle{color:var(--mu);font-weight:400}.btn:disabled{opacity:.5;cursor:not-allowed}.pw{position:relative}.pw input{padding-right:46px}.pw .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:1.2rem;cursor:pointer}
+</style></head><body><div id="app"></div>
+<script type="module">
+/* ====== À MODIFIER ====== */
+const CFG={apiKey:"COLLE_ICI",authDomain:"",projectId:"",appId:""}; // config Firebase (console > Paramètres du projet)
+const PAY={moncash:"509 0000 0000",natcash:"509 0000 0000",nom:"Nom du titulaire"}; // tes numéros de paiement
+const ADMIN_EMAIL="samtracestore00@gmail.com"; // le compte créé avec cet email devient ADMIN
+/* ======================== */
+const DEMO=CFG.apiKey.startsWith("COLLE"); // sans config Firebase : mode démo (données dans le navigateur)
+let fb={};
+if(!DEMO){const V="10.12.2",B=`https://www.gstatic.com/firebasejs/${V}/`;
+ const [a,au,f]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+ const app=a.initializeApp(CFG);fb={...au,...f,auth:au.getAuth(app),db:f.getFirestore(app)};}
+
+/* ---- Logo (2 couleurs, petit sac, texte rose) ---- */
+const LOGO=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="y" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd60a"/><stop offset="1" stop-color="#ffc400"/></linearGradient></defs><rect width="120" height="120" rx="26" fill="url(#y)"/><text x="60" y="43" text-anchor="middle" font-family="Arial Black,Arial" font-size="35" font-weight="900" fill="#ee2a86">STS</text><text x="60" y="61" text-anchor="middle" font-family="Arial" font-size="13" font-weight="800" fill="#ee2a86">Marketplace</text><text x="60" y="73" text-anchor="middle" font-family="Arial" font-size="9" font-weight="700" fill="#ee2a86">Achats en ligne</text><path d="M53 94v-3a7 7 0 0 1 14 0v3" stroke="#ee2a86" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M50 94h20l3 14H47z" fill="#ee2a86"/></svg>`;
+const ICON="data:image/svg+xml,"+encodeURIComponent(LOGO);
+document.head.insertAdjacentHTML("beforeend",`<link rel="icon" href="${ICON}"><link rel="apple-touch-icon" href="icon-192-v2.png">`);
+document.head.insertAdjacentHTML("beforeend",`<link rel="manifest" href="manifest.json">`);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+/* ---- Langues ---- */
+const T={fr:{tag:"Achats en ligne",login:"Se connecter",create:"Créer un compte",name:"Nom complet",email:"Email",pw:"Mot de passe",type:"Type de compte",buyer:"Acheteur",supplier:"Fournisseur / Grossiste",seller:"Vendeur",company:"Entreprise",visitor:"Continuer comme visiteur",noacc:"Pas de compte ? Créer un compte",hasacc:"Déjà un compte ? Se connecter",home:"Accueil",cart:"Panier",sell:"Vendre",admin:"Admin",acc:"Compte",search:"Rechercher un article…",add:"Ajouter au panier",empty:"Votre panier est vide. Ajoutez un article depuis l'accueil.",total:"Total",order:"Commander",done:"Commande envoyée !",need:"Créez un compte pour commander.",newp:"Nouvel article",ptitle:"Nom de l'article",price:"Prix (HTG)",photo:"Photo",cat:"Catégorie",pub:"Publier",mine:"Mes articles",out:"Se déconnecter",users:"Inscrits",vis:"Visiteurs",prods:"Articles",ords:"Commandes",all:"Tout",mode:"Mode",home2:"Maison",tech:"Tech",beauty:"Beauté",bad:"Email ou mot de passe incorrect.",exists:"Cet email existe déjà.",fill:"Remplissez tous les champs.",pwmin:"8 à 10 caractères",lang:"Langue",payhow:"Comment payer",r1:"8 à 10 caractères",r2:"Une seule lettre majuscule",r3:"Les autres lettres en minuscules",r4:"Au moins un chiffre",r5:"Au moins un symbole",r6:"Les deux mots de passe sont identiques",pw2:"Confirmer le mot de passe",pwbad:"Le mot de passe ne respecte pas toutes les règles.",paytxt:"Envoie le montant total par MonCash ou NatCash à ce numéro, puis clique sur Commander.",holder:"Titulaire",noitem:"Aucun article pour le moment.",pubd:"Article publié !"},
+ht:{tag:"Achte sou entènèt",login:"Konekte",create:"Kreye yon kont",name:"Non konplè",email:"Imèl",pw:"Modpas",type:"Kalite kont",buyer:"Achtè",supplier:"Founisè / Gwosis",seller:"Vandè",company:"Konpayi",visitor:"Kontinye kòm vizitè",noacc:"Ou pa gen kont ? Kreye yon kont",hasacc:"Ou gen yon kont deja ? Konekte",home:"Akèy",cart:"Panye",sell:"Vann",admin:"Admin",acc:"Kont",search:"Chèche yon atik…",add:"Mete nan panye",empty:"Panye w la vid. Ajoute yon atik depi nan Akèy.",total:"Total",order:"Pase kòmand",done:"Kòmand lan voye !",need:"Kreye yon kont pou w ka pase kòmand.",newp:"Nouvo atik",ptitle:"Non atik la",price:"Pri (HTG)",photo:"Foto",cat:"Kategori",pub:"Pibliye",mine:"Atik mwen yo",out:"Dekonekte",users:"Moun ki enskri",vis:"Vizitè",prods:"Atik",ords:"Kòmand",all:"Tout",mode:"Rad",home2:"Kay",tech:"Teknoloji",beauty:"Bote",bad:"Imèl oswa modpas la pa bon.",exists:"Imèl sa a deja egziste.",fill:"Ranpli tout chan yo.",pwmin:"8 a 10 karaktè",lang:"Lang",payhow:"Kijan pou w peye",r1:"8 a 10 karaktè",r2:"Yon sèl lèt majiskil",r3:"Lòt lèt yo an minisil",r4:"Omwen yon chif",r5:"Omwen yon senbòl",r6:"De modpas yo idantik",pw2:"Konfime modpas la",pwbad:"Modpas la pa respekte tout règ yo.",paytxt:"Voye montan total la pa MonCash oswa NatCash sou nimewo sa a, answit klike sou Pase kòmand.",holder:"Mèt kont",noitem:"Pa gen atik pou kounye a.",pubd:"Atik la pibliye !"}};
+const CATS=["mode","home2","tech","beauty"];
+
+/* ---- Données ---- */
+const ls=c=>JSON.parse(localStorage["sts_"+c]||"[]");
+const D={async list(c){if(DEMO)return ls(c);const s=await fb.getDocs(fb.collection(fb.db,c));return s.docs.map(d=>({id:d.id,...d.data()}))},
+async add(c,o){o.t=Date.now();if(DEMO){o.id="x"+o.t+Math.random().toString(36).slice(2,6);const a=ls(c);a.push(o);localStorage["sts_"+c]=JSON.stringify(a);return o}const r=await fb.addDoc(fb.collection(fb.db,c),o);return{...o,id:r.id}}};
+const role=(e,r)=>e.toLowerCase()===ADMIN_EMAIL.toLowerCase()?"admin":r;
+async function signUp(n,e,p,r,lang){const u={name:n,email:e,role:role(e,r),lang};
+ if(DEMO){if(ls("users").some(x=>x.email===e))throw Error("exists");return await D.add("users",{...u,pw:p})}
+ try{const c=await fb.createUserWithEmailAndPassword(fb.auth,e,p);await fb.setDoc(fb.doc(fb.db,"users",c.user.uid),{...u,t:Date.now()});return{...u,id:c.user.uid}}catch(x){throw Error(x.code==="auth/email-already-in-use"?"exists":"bad")}}
+async function signIn(e,p){if(DEMO){const u=ls("users").find(x=>x.email===e&&x.pw===p);if(!u)throw Error("bad");return u}
+ try{const c=await fb.signInWithEmailAndPassword(fb.auth,e,p);const d=await fb.getDoc(fb.doc(fb.db,"users",c.user.uid));return{...d.data(),id:c.user.uid}}catch{throw Error("bad")}}
+
+/* ---- État ---- */
+const S={lang:localStorage.sts_lang||"fr",user:JSON.parse(localStorage.sts_user||"null"),tab:"home",cart:[],cat:"all",q:"",mode:"login",err:"",prods:[],adm:{},img:""};
+const t=k=>T[S.lang][k]||k,$=s=>document.querySelector(s),v=id=>($("#"+id)?.value||"").trim();
+const fmt=n=>Number(n).toLocaleString("fr-FR")+" HTG";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const save=()=>{localStorage.sts_lang=S.lang;S.user?localStorage.sts_user=JSON.stringify({...S.user,pw:undefined}):localStorage.removeItem("sts_user")};
+
+async function load(){S.prods=await D.list("products");
+ if(DEMO&&!S.prods.length){for(const [n,p,e,c] of [["Robe d'été fleurie",1800,"👗","mode"],["Sac à main rose",2500,"👜","mode"],["Écouteurs sans fil",3200,"🎧","tech"],["Lampe déco",1400,"💡","home2"],["Rouge à lèvres",650,"💄","beauty"],["Baskets blanches",3900,"👟","mode"]])await D.add("products",{title:n,price:p,emo:e,cat:c,seller:"STS"});S.prods=await D.list("products")}
+ if(S.user?.role==="admin"){const [u,vi,o]=await Promise.all([D.list("users"),D.list("visits"),D.list("orders")]);S.adm={u,vi,o}}render()}
+
+/* ---- Vues ---- */
+const RULES=[["r1",p=>p.length>=8&&p.length<=10],["r2",p=>(p.match(/\p{Lu}/gu)||[]).length===1],["r3",p=>/\p{Ll}/u.test(p)],["r4",p=>/\d/.test(p)],["r5",p=>/[^\p{L}\p{N}\s]/u.test(p)],["r6",(p,q)=>p.length>0&&p===q]];
+const rulesHtml=(p="",q="")=>RULES.map(([k,f])=>{const idle=!p&&!q,ok=f(p,q);return`<li class="${idle?"idle":ok?"ok":"bad"}">${ok?"✓":"✗"} ${t(k)}</li>`}).join("");
+const showErr=m=>{S.err=m;const e=document.querySelector(".err");if(e)e.textContent=m};
+const langBtns=()=>`<div class="lang">${["ht","fr"].map(l=>`<button class="${S.lang===l?"on":""}" onclick="setLang('${l}')">${l==="ht"?"🇭🇹 Kreyòl":"🇫🇷 Français"}</button>`).join("")}</div>`;
+function authView(){const c=S.mode==="create";
+ return`<div class="auth"><img src="${ICON}" alt="STS"><h1>STS Marketplace</h1><p class="s">${t("tag")}</p>${langBtns()}
+<div class="card"><h3>${c?t("create"):t("login")}</h3>
+${c?`<label>${t("name")}</label><input id="n" autocomplete="name">`:""}
+<label>${t("email")}</label><input id="e" type="email" placeholder="ton@email.com" autocomplete="email">
+<label>${t("pw")}</label><div class="pw"><input id="p" type="password" placeholder="${t("pwmin")}" autocomplete="${c?"new-password":"current-password"}" ${c?'oninput="checkPw()"':""}><button type="button" class="eye" onclick="togglePw()">👁</button></div>${c?`<label>${t("pw2")}</label><input id="p2" type="password" oninput="checkPw()" autocomplete="new-password"><ul class="rules" id="rules">${rulesHtml()}</ul>`:""}
+${c?`<label>${t("type")}</label><select id="r"><option value="buyer">${t("buyer")}</option><option value="seller">${t("seller")}</option><option value="supplier">${t("supplier")}</option><option value="company">${t("company")}</option></select>`:""}
+<div class="err">${esc(S.err)}</div><button id="go" class="btn" ${c?"disabled":""} onclick="${c?"doSignUp()":"doSignIn()"}">${c?t("create"):t("login")}</button>
+<button class="lnk" onclick="S.mode='${c?"login":"create"}';S.err='';render()">${c?t("hasacc"):t("noacc")}</button></div>
+<button class="btn alt" onclick="goVisitor()">👀 ${t("visitor")}</button></div>`}
+const header=()=>`<header><img src="${ICON}" alt=""><b>STS Marketplace</b>${langBtns()}</header>`;
+const nav=()=>{const u=S.user,tabs=[["home","🏠",t("home")],["cart","🛒",t("cart")]];
+ if(["seller","company","supplier"].includes(u.role))tabs.push(["sell","➕",t("sell")]);
+ if(u.role==="admin")tabs.push(["admin","📊",t("admin")]);tabs.push(["acc","👤",t("acc")]);
+ return`<nav>${tabs.map(([k,i,l])=>`<button class="${S.tab===k?"on":""}" onclick="S.tab='${k}';render()"><span>${i}</span>${l}${k==="cart"&&S.cart.length?`<i>${S.cart.length}</i>`:""}</button>`).join("")}</nav>`};
+const card=p=>`<div class="pr"><div class="im">${p.img?`<img src="${p.img}" alt="">`:p.emo||"🛍️"}</div><div class="t">${esc(p.title)}<div class="pc">${fmt(p.price)}</div></div><button onclick="addCart('${p.id}')">${t("add")}</button></div>`;
+function view(){const u=S.user;
+ if(S.tab==="home"){const l=S.prods.filter(p=>(S.cat==="all"||p.cat===S.cat)&&p.title.toLowerCase().includes(S.q.toLowerCase()));
+  return`<input id="q" value="${esc(S.q)}" placeholder="${t("search")}" oninput="S.q=this.value;render(true)"><div class="cats">${["all",...CATS].map(c=>`<button class="chip ${S.cat===c?"on":""}" onclick="S.cat='${c}';render()">${t(c)}</button>`).join("")}</div>
+  <div class="grid">${l.map(card).join("")||`<p>${t("noitem")}</p>`}</div>`}
+ if(S.tab==="cart"){if(!S.cart.length)return`<p class="card">${t("empty")}</p>`;
+  const tot=S.cart.reduce((s,p)=>s+Number(p.price),0);
+  return`<div class="card">${S.cart.map((p,i)=>`<div class="row"><span>${p.emo||"🛍️"} ${esc(p.title)}</span><span>${fmt(p.price)} <button class="lnk" style="margin:0" onclick="S.cart.splice(${i},1);render()">✕</button></span></div>`).join("")}<div class="row"><b>${t("total")}</b><b>${fmt(tot)}</b></div><div class="card" style="background:#f3ecff;margin:12px 0 0"><b>${t("payhow")}</b><p style="font-size:.85rem;margin:6px 0">${t("paytxt")}</p><div class="row"><span>🟠 MonCash</span><b>${PAY.moncash}</b></div><div class="row"><span>🔴 NatCash</span><b>${PAY.natcash}</b></div><small>${t("holder")} : ${esc(PAY.nom)}</small></div><div class="err">${esc(S.err)}</div><button class="btn" onclick="checkout()">${t("order")}</button></div>`}
+ if(S.tab==="sell"){const mine=S.prods.filter(p=>p.sellerEmail===u.email);
+  return`<div class="card"><h3>${t("newp")}</h3><label>${t("ptitle")}</label><input id="pt"><label>${t("price")}</label><input id="pp" type="number" min="0"><label>${t("cat")}</label><select id="pc">${CATS.map(c=>`<option value="${c}">${t(c)}</option>`).join("")}</select><label>${t("photo")}</label><input type="file" accept="image/*" onchange="pickImg(this)"><div class="err">${esc(S.err)}</div><button class="btn" onclick="publish()">${t("pub")}</button></div>
+  <h3>${t("mine")}</h3><div class="grid">${mine.map(card).join("")}</div>`}
+ if(S.tab==="admin"&&u.role==="admin"){const a=S.adm,vv=(a.vi||[]).length;
+  return`<div class="st"><div><b>${(a.u||[]).length}</b>${t("users")}</div><div><b>${vv}</b>${t("vis")}</div><div><b>${S.prods.length}</b>${t("prods")}</div><div><b>${(a.o||[]).length}</b>${t("ords")}</div></div>
+  <div class="card"><h3>${t("users")}</h3>${(a.u||[]).map(x=>`<div class="row"><span>${esc(x.name)}<br><small>${esc(x.email)}</small></span><span class="tag">${t(x.role==="admin"?"admin":x.role)}</span></div>`).join("")}</div>
+  <div class="card"><h3>${t("vis")}</h3>${(a.vi||[]).slice(-15).reverse().map(x=>`<div class="row"><span>👀 ${t("vis")}</span><small>${new Date(x.t).toLocaleString()}</small></div>`).join("")}</div>
+  <div class="card"><h3>${t("ords")}</h3>${(a.o||[]).slice(-15).reverse().map(x=>`<div class="row"><span>${esc(x.buyer)}<br><small>${x.n} ×</small></span><b>${fmt(x.total)}</b></div>`).join("")}</div>`}
+ return`<div class="card"><h3>${esc(u.name||t("visitor"))}</h3><p>${esc(u.email||"")}</p><p class="tag" style="display:inline-block;margin:8px 0">${t(u.role==="admin"?"admin":u.role)}</p><label>${t("lang")}</label>${langBtns()}<button class="btn" onclick="logout()">${u.role==="visitor"?t("login"):t("out")}</button></div>`}
+function render(keep){if(!S.user){$("#app").innerHTML=authView();document.documentElement.lang=S.lang==="ht"?"ht":"fr";return}
+ const f=keep&&document.activeElement?.id==="q";$("#app").innerHTML=header()+`<main>${view()}</main>`+nav();
+ if(f){const q=$("#q");q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+
+/* ---- Actions ---- */
+Object.assign(window,{S,render,
+checkPw(){const p=$("#p").value,q=$("#p2").value;$("#rules").innerHTML=rulesHtml(p,q);$("#go").disabled=!RULES.every(([,f])=>f(p,q))},
+togglePw(){const i=$("#p"),j=$("#p2"),h=i.type==="password";i.type=h?"text":"password";if(j)j.type=i.type},
+setLang(l){S.lang=l;save();render()},
+async doSignIn(){try{S.user=await signIn(v("e"),$("#p").value);S.lang=S.user.lang||S.lang;S.err="";save();S.tab="home";load()}catch(x){showErr(t(x.message))}},
+async doSignUp(){const n=v("n"),e=v("e"),p=$("#p").value,q=$("#p2").value;if(!n||!e)return showErr(t("fill"));if(!RULES.every(([,f])=>f(p,q))){checkPw();return showErr(t("pwbad"))}
+ try{S.user=await signUp(n,e,p,v("r"),S.lang);S.err="";save();S.tab="home";load()}catch(x){showErr(t(x.message))}},
+goVisitor(){S.user={role:"visitor",name:"",lang:S.lang};save();D.add("visits",{lang:S.lang}).catch(()=>{});S.tab="home";load()},
+logout(){S.user=null;S.cart=[];S.mode="login";save();if(!DEMO)fb.signOut(fb.auth);render()},
+addCart(id){const p=S.prods.find(x=>x.id===id);if(p){S.cart.push(p);render(true)}},
+async checkout(){if(S.user.role==="visitor"){S.err=t("need");return render()}
+ await D.add("orders",{buyer:S.user.email,n:S.cart.length,total:S.cart.reduce((s,p)=>s+Number(p.price),0),items:S.cart.map(p=>p.title)});S.cart=[];S.err="";alert(t("done"));S.tab="home";load()},
+pickImg(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas"),k=Math.min(1,480/Math.max(im.width,im.height));c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);S.img=c.toDataURL("image/jpeg",.7)};im.src=r.result};r.readAsDataURL(f)},
+async publish(){const ti=v("pt"),pr=v("pp");if(!ti||!pr){S.err=t("fill");return render()}
+ await D.add("products",{title:ti,price:Number(pr),cat:v("pc"),img:S.img,seller:S.user.name,sellerEmail:S.user.email});S.img="";S.err="";alert(t("pubd"));load()}});
+render();load();
+</script></body></html>
